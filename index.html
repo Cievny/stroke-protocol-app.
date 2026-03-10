@@ -1,13 +1,25 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="sk">
   <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>stroke-protocol-app</title>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="description" content="Stroke Protocol App pre kardiocentrum" />
+    
+    <title>Stroke Protocol App</title>
+    
+    <!-- TOTO JE KĽÚČOVÝ RIADOK PRE DIZAJN: Načítava Tailwind CSS priamo z CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
   </head>
-  <body>
+  <body class="bg-slate-900">
+    <noscript>Pre beh tejto aplikácie musíte mať zapnutý JavaScript.</noscript>
+    
+    <!-- Do tohto elementu React "vykreslí" celú aplikáciu z App.jsx -->
     <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    
+    <!-- Ak používate Vite, pridajte tento riadok na prepojenie skriptov (inak ho zmažte): -->
+    <!-- <script type="module" src="/src/main.jsx"></script> -->
   </body>
 </html>
