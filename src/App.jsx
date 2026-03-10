@@ -44,7 +44,7 @@ nihssItemsDefinition.forEach((group) => {
 
 // --- 2. STATE MANAGEMENT ---
 
-const LOCAL_STORAGE_KEY = "strokePatientData_v5"; // Nová verzia pre clear cache (zmena štruktúry času)
+const LOCAL_STORAGE_KEY = "strokePatientData_v5";
 
 const initialPatientState = {
   befastTime: "",
@@ -53,7 +53,7 @@ const initialPatientState = {
   nihssScores: initialNihssScores,
   ivtContraindications: [],
   ctResult: "ischemia",
-  timeWindow: "0-4.5h", // Upravené defaultné okno
+  timeWindow: "0-4.5h",
   ctagResult: "no_lvo",
   perfusionResult: "mismatch",
 };
@@ -93,7 +93,6 @@ function calculateTotalNihss(scores) {
   }, 0);
 }
 
-// Vylepšená funkcia pre presnejší výpočet hodín
 function getElapsedTimeInfo(timeStr) {
   if (!timeStr || timeStr.toLowerCase().includes("neznám") || timeStr.toLowerCase().includes("wake")) {
     return { hours: 99, category: ">6h", isUnknown: true };
@@ -195,7 +194,6 @@ function getRecommendation(patientData) {
     // 2. OKNO 4.5 - 6 hodín
     if (timeWindow === "4.5-6h") {
       if (isIvtContraindicated) {
-        // PERFÚZIA SA NEROBÍ (ani sa nerieši v UI), ideme čisto podľa LVO
         if (ctagResult === "lvo") {
           return {
             title: "Direct MTE (Priamo na sálu)",
@@ -212,7 +210,6 @@ function getRecommendation(patientData) {
           };
         }
       } else {
-        // PERFÚZIA BOLA NUTNÁ pre rozhodnutie o IVT
         if (perfusionResult === "mismatch") {
           if (ctagResult === "lvo") {
             return {
@@ -230,7 +227,6 @@ function getRecommendation(patientData) {
             };
           }
         } else {
-          // NEMÁ mismatch na CTP, ale je v okne do 6 hodín pre MTE!
           if (ctagResult === "lvo") {
             return {
               title: "Direct MTE (Bez IVT)",
@@ -286,7 +282,7 @@ function getRecommendation(patientData) {
             };
           }
         }
-      } else { // no_mismatch v okne >6h
+      } else { 
         return {
           title: "Konzervatívny Postup",
           description: "V predĺženom okne nie je prítomná zachrániteľná penumbra (mismatch). Reperfúzia sa neodporúča.",
@@ -296,7 +292,7 @@ function getRecommendation(patientData) {
       }
     }
 
-    // Prípad A. Basilaris (ponechávame oddelene ako záchranu života)
+    // Prípad A. Basilaris
     if (timeWindow === "basilaris>4.5h") {
       if (isIvtContraindicated) {
         return {
@@ -564,22 +560,18 @@ const CtResultsScreen = ({ patientData, dispatch, onNext, onBack }) => {
   const timeInfo = useMemo(() => getElapsedTimeInfo(befastTime), [befastTime]);
   const isContraindicated = ivtContraindications.length > 0;
   
-  // Automatický výber časového okna pri prvom načítaní
   useEffect(() => {
     if (timeWindow !== timeInfo.category && timeWindow !== "basilaris>4.5h") {
       handleCtFieldChange("timeWindow", timeInfo.category);
     }
   }, [timeInfo.category]);
 
-  // Vylepšená logika: Perfúzia je nutná iba ak čas je nad 6 hodín, 
-  // ALEBO ak je čas 4.5-6h A ZÁROVEŇ pacient NEMÁ kontraindikáciu (riešime Alteplázu)
   const requiresPerfusion = timeWindow === ">6h" || (timeWindow === "4.5-6h" && !isContraindicated);
 
   return (
     <div>
       <h2 className="text-3xl font-bold text-center text-blue-300 mb-6">Krok 6: Výsledky CT & CTAG</h2>
 
-      {/* --- AUTOMATICKY NAVRHNUTE CT OKNO (BEZ PORADIA) --- */}
       <div className="bg-slate-800 border-2 border-blue-500 p-5 rounded-lg mb-8 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-bl-lg">
           NÁVRH MODALÍT
@@ -597,7 +589,6 @@ const CtResultsScreen = ({ patientData, dispatch, onNext, onBack }) => {
         </p>
         
         <div className="space-y-2 text-sm">
-          {/* Vysvetľovací text podľa novej logiky */}
           {timeWindow === "0-4.5h" && (
              <p className="text-blue-100 bg-blue-900/40 p-2 rounded">
                 <strong>Zákl. info:</strong> Pacient je v okne do 4.5 hodín ({timeInfo.hours.toFixed(1)}h). Perfúzia štandardne NIE JE nutná pre indikáciu reperfúzie, cieľom je ušetriť čas.
@@ -621,7 +612,6 @@ const CtResultsScreen = ({ patientData, dispatch, onNext, onBack }) => {
         </div>
       </div>
 
-      {/* --- FORMULAR --- */}
       <div className="space-y-6">
         <div className="bg-slate-700 p-4 rounded-lg shadow-inner">
           <label className="block text-xl font-semibold text-slate-100 mb-3">Nález Natívneho CT (NCCT)</label>
@@ -672,7 +662,6 @@ const CtResultsScreen = ({ patientData, dispatch, onNext, onBack }) => {
               </div>
             )}
             
-            {/* Perfúzia sa zobrazí Iba ak je explicitne vyžiadaná */}
             {requiresPerfusion && (
               <div className="bg-slate-700 p-4 rounded-lg shadow-inner border-l-4 border-green-500">
                 <label className="block text-xl font-semibold text-slate-100 mb-3">Nález Perfúzie (CTP)</label>
