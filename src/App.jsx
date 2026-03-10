@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useReducer, useEffect } from "react";
+import ReactDOM from "react-dom/client";
 
 // --- 1. HELPER DATA ---
 const nihssItemsDefinition = [
@@ -711,7 +712,7 @@ const RecommendationScreen = ({ patientData, onReset, onBack }) => {
 
 // --- 5. HLAVNÁ KOMPONENTA APLIKÁCIE ---
 
-export default function App() {
+function App() {
   const [page, setPage] = useState("start");
 
   const [patientData, dispatch] = useReducer(patientReducer, initialPatientState, (initial) => {
@@ -751,5 +752,15 @@ export default function App() {
         {renderCurrentPage()}
       </div>
     </div>
+  );
+}
+
+// --- ŠTART APLIKÁCIE PRE PREHLIADAČ ---
+const rootElement = document.getElementById("root");
+if (rootElement) {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
   );
 }
