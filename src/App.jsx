@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useReducer, useEffect } from "react";
-import ReactDOM from "react-dom/client";
+import { useState, useMemo, useReducer, useEffect } from "react";
+import CtBooking from "./CtBooking.jsx";
 
 // --- 1. HELPER DATA ---
 const nihssItemsDefinition = [
@@ -116,7 +116,7 @@ function getElapsedTimeInfo(timeStr) {
     if (diffHrs > 6) category = ">6h";
     
     return { hours: diffHrs, category, isUnknown: false };
-  } catch (e) {
+  } catch {
     return { hours: 99, category: ">6h", isUnknown: true };
   }
 }
@@ -713,6 +713,7 @@ const RecommendationScreen = ({ patientData, onReset, onBack }) => {
 // --- 5. HLAVNÁ KOMPONENTA APLIKÁCIE ---
 
 function App() {
+  const [module, setModule] = useState("stroke");
   const [page, setPage] = useState("start");
 
   const [patientData, dispatch] = useReducer(patientReducer, initialPatientState, (initial) => {
@@ -747,20 +748,28 @@ function App() {
   };
 
   return (
-    <div className="bg-slate-900 text-white min-h-screen p-4 md:p-8 flex items-center justify-center font-sans">
-      <div className="max-w-3xl w-full bg-slate-800 p-6 md:p-10 rounded-xl shadow-2xl border-slate-700">
-        {renderCurrentPage()}
+    <div className="bg-slate-900 text-white min-h-screen p-4 md:p-8 font-sans">
+      <div className="max-w-3xl w-full mx-auto">
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setModule("stroke")}
+            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${module === "stroke" ? "bg-red-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}
+          >
+            🧠 Stroke protokol
+          </button>
+          <button
+            onClick={() => setModule("booking")}
+            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${module === "booking" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}
+          >
+            📅 CT objednávky
+          </button>
+        </div>
+        <div className="bg-slate-800 p-6 md:p-10 rounded-xl shadow-2xl border-slate-700">
+          {module === "stroke" ? renderCurrentPage() : <CtBooking />}
+        </div>
       </div>
     </div>
   );
 }
 
-// --- ŠTART APLIKÁCIE PRE PREHLIADAČ ---
-const rootElement = document.getElementById("root");
-if (rootElement) {
-  ReactDOM.createRoot(rootElement).render(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
-}
+export default App;
