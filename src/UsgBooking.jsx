@@ -62,6 +62,7 @@ const defaultSettings = {
 const SLOT_START_MINUTES = 7 * 60 + 30;
 const SLOT_END_MINUTES = 14 * 60 + 30;
 const SLOT_LENGTH_MINUTES = 20;
+const EXAM_DURATION_LABEL = "20 min";
 
 function generateDaySlots() {
   const slots = [];
@@ -86,12 +87,6 @@ function formatDateHuman(isoDate) {
   if (!isoDate) return "";
   return new Date(`${isoDate}T12:00:00`).toLocaleDateString("sk-SK", {
     weekday: "long", day: "numeric", month: "long", year: "numeric",
-  });
-}
-
-function formatDateShort(isoDate) {
-  return new Date(`${isoDate}T12:00:00`).toLocaleDateString("sk-SK", {
-    weekday: "short", day: "numeric", month: "numeric",
   });
 }
 
@@ -135,7 +130,7 @@ const PaymentQr = ({ order, settings }) => {
           bankAccounts: [{ iban: settings.iban.replace(/\s/g, "") }],
         }],
       });
-      QRCode.toDataURL(qrString, { width: 280, margin: 2 })
+      QRCode.toDataURL(qrString, { width: 260, margin: 2 })
         .then((url) => { if (alive) setDataUrl(url); })
         .catch((e) => { if (alive) setError(String(e)); });
     } catch (e) {
@@ -146,22 +141,139 @@ const PaymentQr = ({ order, settings }) => {
 
   if (error) {
     return (
-      <div className="bg-red-900/50 border border-red-500 p-4 rounded-lg text-sm text-red-200">
+      <div className="bg-red-50 border border-red-300 p-4 rounded-lg text-sm text-red-700">
         QR kód sa nepodarilo vygenerovať — skontrolujte IBAN v nastaveniach správy. ({error})
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg p-4 inline-block">
+    <div className="bg-white border border-slate-200 rounded-xl p-3 inline-block shadow-sm">
       {dataUrl
-        ? <img src={dataUrl} alt="QR platba" width={280} height={280} />
-        : <div className="w-[280px] h-[280px] flex items-center justify-center text-slate-500">Generujem QR…</div>}
+        ? <img src={dataUrl} alt="QR platba" width={260} height={260} />
+        : <div className="w-[260px] h-[260px] flex items-center justify-center text-slate-400">Generujem QR…</div>}
     </div>
   );
 };
 
-// --- 4. PACIENTSKY POHĽAD — ŽIADANKA + VÝBER TERMÍNU ---
+// --- 4. PACIENTSKY SPRIEVODCA (štýl Bookio) ---
+
+const UsgHero = () => (
+  <div className="bg-white rounded-2xl shadow-xl p-5 md:p-8 mb-4 text-slate-800">
+    <p className="text-xs font-bold tracking-widest text-blue-600 uppercase mb-1">Národný ústav srdcových a cievnych chorôb, a.s.</p>
+    <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">
+      Cievne USG vyšetrenie tam, kde cievam rozumejú najlepšie
+    </h2>
+    <p className="text-slate-600 mb-5">
+      Objednajte sa online na sonografické vyšetrenie ciev priamo v NÚSCH — bez čakania v rade,
+      s termínom, ktorý si vyberiete sami, a platbou vopred cez QR kód.
+    </p>
+    <div className="grid md:grid-cols-3 gap-3">
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <div className="text-2xl mb-1">🩺</div>
+        <p className="font-bold text-slate-800 text-sm mb-1">Skúsení odborníci</p>
+        <p className="text-xs text-slate-600">
+          Vyšetrenie vykonávajú lekári s dlhoročnou praxou v cievnej diagnostike na moderných ultrazvukových prístrojoch.
+        </p>
+      </div>
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <div className="text-2xl mb-1">🏥</div>
+        <p className="font-bold text-slate-800 text-sm mb-1">Tradícia a špecializácia</p>
+        <p className="text-xs text-slate-600">
+          NÚSCH je špičkové slovenské pracovisko pre srdce a cievy — diagnostike cievnych ochorení sa venujeme desaťročia.
+        </p>
+      </div>
+      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+        <div className="text-2xl mb-1">🤝</div>
+        <p className="font-bold text-slate-800 text-sm mb-1">Starostlivosť, ktorá nekončí nálezom</p>
+        <p className="text-xs text-slate-600">
+          Pri pozitívnom náleze na vyšetrenie priamo nadväzuje ďalšia diagnostika a liečba u našich špecialistov — všetko pod jednou strechou.
+        </p>
+      </div>
+    </div>
+  </div>
+);
+
+const wizardSteps = ["Vyšetrenie", "Termín", "Vaše údaje", "Platba"];
+
+const StepIndicator = ({ current }) => (
+  <div className="flex items-center justify-between mb-6">
+    {wizardSteps.map((label, i) => {
+      const stepNum = i + 1;
+      const done = stepNum < current;
+      const active = stepNum === current;
+      return (
+        <div key={label} className="flex items-center flex-1 last:flex-none">
+          <div className="flex flex-col items-center">
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+              done ? "bg-emerald-500 text-white" : active ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-500"
+            }`}>
+              {done ? "✓" : stepNum}
+            </div>
+            <span className={`text-[11px] mt-1 font-semibold whitespace-nowrap ${active ? "text-blue-700" : done ? "text-emerald-600" : "text-slate-400"}`}>
+              {label}
+            </span>
+          </div>
+          {i < wizardSteps.length - 1 && (
+            <div className={`flex-1 h-0.5 mx-2 mb-4 ${stepNum < current ? "bg-emerald-400" : "bg-slate-200"}`} />
+          )}
+        </div>
+      );
+    })}
+  </div>
+);
+
+const MonthCalendar = ({ monthDate, onMonthChange, isAvailable, selected, onSelect }) => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const startOffset = (firstDay.getDay() + 6) % 7; // pondelok = 0
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const todayIso = toISODate(new Date());
+  const monthLabel = firstDay.toLocaleDateString("sk-SK", { month: "long", year: "numeric" });
+
+  const cells = [];
+  for (let i = 0; i < startOffset; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <button type="button" onClick={() => onMonthChange(-1)} className="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-600 font-bold text-lg transition-colors">‹</button>
+        <span className="font-bold text-slate-800 capitalize">{monthLabel}</span>
+        <button type="button" onClick={() => onMonthChange(1)} className="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-600 font-bold text-lg transition-colors">›</button>
+      </div>
+      <div className="grid grid-cols-7 gap-1 text-center text-xs font-semibold text-slate-400 mb-1">
+        {["Po", "Ut", "St", "Št", "Pi", "So", "Ne"].map((d) => (<span key={d} className="py-1">{d}</span>))}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((day, i) => {
+          if (day === null) return <span key={`empty-${i}`} />;
+          const iso = toISODate(new Date(year, month, day));
+          const available = isAvailable(iso);
+          const isSelected = selected === iso;
+          const isToday = iso === todayIso;
+          return (
+            <button
+              key={iso}
+              type="button"
+              title={iso}
+              disabled={!available}
+              onClick={() => onSelect(iso)}
+              className={`aspect-square rounded-full text-sm font-semibold transition-colors ${
+                isSelected ? "bg-blue-600 text-white"
+                : available ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                : "text-slate-300 cursor-default"
+              } ${isToday && !isSelected ? "ring-1 ring-blue-400" : ""}`}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
 
 const emptyForm = {
   hasReferral: "", // "yes" = so žiadankou (doplatok), "no" = samoplatca (plná cena)
@@ -179,22 +291,19 @@ const emptyForm = {
 };
 
 const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
+  const [step, setStep] = useState(1);
   const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState("");
   const [createdOrder, setCreatedOrder] = useState(null);
 
   const isReferral = form.hasReferral === "yes";
-  const hasChosen = form.hasReferral !== "";
-  // So žiadankou sa ponúkajú len vyšetrenia, ktoré majú doplatkovú cenu
   const examChoices = isReferral ? pricelist.filter((t) => t.priceReferral != null) : pricelist;
   const examType = examChoices.find((t) => t.id === form.examTypeId) || null;
   const priceFor = (t) => (isReferral ? t.priceReferral : t.priceSelf);
 
   const setField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
-  const chooseReferral = (value) =>
-    setForm((f) => ({ ...f, hasReferral: value, examTypeId: "" }));
+  const chooseReferral = (value) => setForm((f) => ({ ...f, hasReferral: value, examTypeId: "" }));
 
-  // Obsadené termíny naprieč objednávkami
   const takenByDate = useMemo(() => {
     const map = new Map();
     orders.filter(isSlotOccupying).forEach((o) => {
@@ -210,29 +319,51 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
     return open.filter((s) => !taken.has(s));
   };
 
-  // Najbližších 60 dní, v ktorých pracovisko otvorilo aspoň 1 voľný termín
-  const availableDays = useMemo(() => {
-    const days = [];
+  const todayIso = toISODate(new Date());
+  const isDayAvailable = (iso) => iso >= todayIso && freeSlotsFor(iso).length > 0;
+
+  const firstAvailableIso = useMemo(() => {
     const d = new Date();
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 180; i++) {
       const iso = toISODate(d);
-      if (freeSlotsFor(iso).length > 0) days.push(iso);
+      if (isDayAvailable(iso)) return iso;
       d.setDate(d.getDate() + 1);
     }
-    return days;
+    return null;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSlots, takenByDate]);
+
+  const [monthDate, setMonthDate] = useState(() => {
+    const base = firstAvailableIso ? new Date(`${firstAvailableIso}T12:00:00`) : new Date();
+    return new Date(base.getFullYear(), base.getMonth(), 1);
+  });
+  const shiftMonth = (delta) => setMonthDate((m) => new Date(m.getFullYear(), m.getMonth() + delta, 1));
+
+  const goNext = () => {
+    setError("");
+    if (step === 1) {
+      if (!form.hasReferral) return setError("Vyberte, či máte žiadanku od lekára.");
+      if (!examType) return setError("Vyberte typ vyšetrenia.");
+    }
+    if (step === 2) {
+      if (!form.date || !form.time) return setError("Vyberte si deň a čas.");
+      if (!freeSlotsFor(form.date).includes(form.time)) {
+        setField("time", "");
+        return setError("Vybraný termín už nie je dostupný. Vyberte iný.");
+      }
+    }
+    setStep((s) => s + 1);
+  };
+  const goBack = () => { setError(""); setStep((s) => Math.max(1, s - 1)); };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
-    if (!examType) return setError("Vyberte typ vyšetrenia.");
-    if (!form.date || !form.time) return setError("Vyberte si deň a čas z ponúkaných termínov.");
     if (!freeSlotsFor(form.date).includes(form.time)) {
+      setStep(2);
       setField("time", "");
       return setError("Vybraný termín už nie je dostupný. Vyberte iný.");
     }
-
     const order = {
       id: `USG-${Date.now().toString(36).toUpperCase()}`,
       variableSymbol: String(Date.now()).slice(-10),
@@ -260,217 +391,253 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
     };
     onSubmit(order);
     setCreatedOrder(order);
-    setForm(emptyForm);
+    setStep(4);
   };
 
-  if (createdOrder) {
-    return (
-      <div className="space-y-4 text-center">
-        <div className="bg-green-800/60 border border-green-500 p-5 rounded-lg space-y-2">
-          <h3 className="text-2xl font-bold text-green-300">Žiadosť odoslaná</h3>
-          <p>
-            <strong>{createdOrder.exam.label}</strong> — {formatDateHuman(createdOrder.date)} o {createdOrder.time}
-          </p>
-          <p className="text-sm text-slate-300">Číslo objednávky: <strong className="text-yellow-300">{createdOrder.id}</strong></p>
-        </div>
+  const resetWizard = () => { setCreatedOrder(null); setForm(emptyForm); setStep(1); setError(""); };
 
-        <div className="bg-slate-700 p-5 rounded-lg space-y-3">
-          <h3 className="text-xl font-bold text-blue-300">
-            {createdOrder.hasReferral ? "Platba doplatku (so žiadankou)" : "Platba za vyšetrenie (samoplatca)"}
-          </h3>
-          <p className="text-3xl font-bold text-yellow-300">{formatPrice(createdOrder.price)}</p>
-          <p className="text-sm text-slate-300">Naskenujte QR kód v mobilnej aplikácii vašej banky (PAY by square):</p>
-          <PaymentQr order={createdOrder} settings={settings} />
-          <div className="bg-slate-800/60 rounded-lg p-3 text-left text-sm space-y-1 max-w-md mx-auto">
-            <p><strong>IBAN:</strong> {settings.iban}</p>
-            <p><strong>Príjemca:</strong> {settings.beneficiary}</p>
-            <p><strong>Variabilný symbol:</strong> {createdOrder.variableSymbol}</p>
-            <p><strong>Suma:</strong> {formatPrice(createdOrder.price)}</p>
-          </div>
-          {createdOrder.hasReferral && (
-            <p className="text-sm text-yellow-200 bg-yellow-900/40 p-3 rounded-lg">
-              <strong>Nezabudnite si na vyšetrenie priniesť žiadanku (výmenný lístok)</strong> od odporúčajúceho lekára — bez nej platí plná samoplatcovská cena.
-            </p>
-          )}
-          <p className="text-sm text-yellow-200 bg-yellow-900/40 p-3 rounded-lg">
-            Termín je rezervovaný a bude <strong>potvrdený po prijatí platby</strong>. Ak platba nepríde do 24 hodín, rezervácia môže byť zrušená.
-          </p>
-        </div>
-
-        <button onClick={() => setCreatedOrder(null)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transition duration-200">
-          Nová objednávka
-        </button>
-      </div>
-    );
-  }
-
-  const inputCls = "w-full p-3 bg-slate-800 border border-slate-600 rounded-lg text-white focus:ring-2 focus:ring-blue-500";
-  const sectionCls = "bg-slate-700 p-4 rounded-lg shadow-inner space-y-3";
-  const labelCls = "block text-sm font-semibold text-slate-200";
+  const inputCls = "w-full p-3 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none";
+  const labelCls = "block text-sm font-semibold text-slate-600 mb-1";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <div className={sectionCls}>
-        <h3 className="text-lg font-bold text-blue-300">Máte žiadanku od lekára?</h3>
-        <p className="text-sm text-slate-300">
-          Ide o platené vyšetrenia v rámci doplnkových ordinačných hodín. So žiadankou (výmenným lístkom) platíte
-          len doplatok podľa cenníka, bez žiadanky plnú samoplatcovskú cenu.
-        </p>
-        <div className="flex flex-col sm:flex-row gap-3">
-          <button
-            type="button"
-            onClick={() => chooseReferral("yes")}
-            className={`flex-1 p-4 rounded-lg font-bold transition-colors ${
-              form.hasReferral === "yes" ? "bg-green-600 text-white ring-2 ring-green-300" : "bg-slate-600 hover:bg-slate-500 text-white"
-            }`}
-          >
-            Áno, mám žiadanku
-            <span className="block text-xs font-normal opacity-80">platí sa doplatok podľa cenníka</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => chooseReferral("no")}
-            className={`flex-1 p-4 rounded-lg font-bold transition-colors ${
-              form.hasReferral === "no" ? "bg-blue-600 text-white ring-2 ring-blue-300" : "bg-slate-600 hover:bg-slate-500 text-white"
-            }`}
-          >
-            Nie, nemám žiadanku
-            <span className="block text-xs font-normal opacity-80">samoplatca — plná cena podľa cenníka</span>
-          </button>
-        </div>
-      </div>
+    <div className="bg-white rounded-2xl shadow-xl p-5 md:p-8 text-slate-800">
+      <StepIndicator current={step} />
 
-      {hasChosen && (
-        <>
-          <div className={sectionCls}>
-            <h3 className="text-lg font-bold text-blue-300">Vyšetrenie</h3>
+      {/* KROK 1 — VYŠETRENIE */}
+      {step === 1 && (
+        <div className="space-y-5">
+          <div>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">Máte žiadanku od lekára?</h3>
+            <p className="text-sm text-slate-500 mb-3">
+              Ide o platené vyšetrenia v rámci doplnkových ordinačných hodín. So žiadankou (výmenným lístkom)
+              platíte len doplatok, bez žiadanky plnú cenu podľa cenníka.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                type="button"
+                onClick={() => chooseReferral("yes")}
+                className={`flex-1 p-4 rounded-xl border-2 text-left transition-colors ${
+                  form.hasReferral === "yes" ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-blue-300"
+                }`}
+              >
+                <span className="font-bold text-slate-800">Áno, mám žiadanku</span>
+                <span className="block text-xs text-slate-500 mt-1">platí sa doplatok podľa cenníka</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseReferral("no")}
+                className={`flex-1 p-4 rounded-xl border-2 text-left transition-colors ${
+                  form.hasReferral === "no" ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-blue-300"
+                }`}
+              >
+                <span className="font-bold text-slate-800">Nie, nemám žiadanku</span>
+                <span className="block text-xs text-slate-500 mt-1">samoplatca — plná cena podľa cenníka</span>
+              </button>
+            </div>
+          </div>
+
+          {form.hasReferral && (
             <div>
-              <label className={labelCls}>Typ vyšetrenia *</label>
-              <select required value={form.examTypeId} onChange={(e) => setField("examTypeId", e.target.value)} className={inputCls}>
-                <option value="" disabled>— vyberte vyšetrenie —</option>
+              <h3 className="text-lg font-bold text-slate-800 mb-3">Vyberte vyšetrenie</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                 {examChoices.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.label} — {formatPrice(priceFor(t))}
-                  </option>
+                  <button
+                    key={t.id}
+                    type="button"
+                    onClick={() => setField("examTypeId", t.id)}
+                    className={`w-full flex items-center justify-between gap-3 p-4 rounded-xl border-2 text-left transition-colors ${
+                      form.examTypeId === t.id ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-blue-300"
+                    }`}
+                  >
+                    <span>
+                      <span className="font-semibold text-slate-800 text-sm">{t.label}</span>
+                      <span className="block text-xs text-slate-400 mt-0.5">⏱ {EXAM_DURATION_LABEL}</span>
+                    </span>
+                    <span className="text-blue-700 font-bold whitespace-nowrap">{formatPrice(priceFor(t))}</span>
+                  </button>
                 ))}
-              </select>
-              {examType && (
-                <p className="text-yellow-300 font-bold text-lg mt-2">
-                  {isReferral ? `Doplatok so žiadankou: ${formatPrice(examType.priceReferral)}` : `Cena: ${formatPrice(examType.priceSelf)}`}
-                </p>
-              )}
+              </div>
               {isReferral && (
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-2">
                   Niektoré vyšetrenia sú dostupné len ako samoplatcovské — v tomto zozname sa nezobrazujú.
                 </p>
               )}
             </div>
-            <div>
-              <label className={labelCls}>Dôvod vyšetrenia / ťažkosti *</label>
-              <textarea required rows={3} value={form.reason} onChange={(e) => setField("reason", e.target.value)} className={inputCls} placeholder="Popíšte svoje ťažkosti alebo dôvod, pre ktorý žiadate vyšetrenie…" />
-            </div>
-            {isReferral && (
-              <div className="border-l-4 border-green-500 bg-slate-800/60 p-3 rounded space-y-3">
-                <p className="text-green-300 font-semibold text-sm">Údaje zo žiadanky:</p>
-                <div className="grid md:grid-cols-2 gap-3">
-                  <div>
-                    <label className={labelCls}>Odporúčajúci lekár *</label>
-                    <input required value={form.referrerName} onChange={(e) => setField("referrerName", e.target.value)} className={inputCls} placeholder="MUDr. …" />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Ambulancia / pracovisko</label>
-                    <input value={form.referrerFacility} onChange={(e) => setField("referrerFacility", e.target.value)} className={inputCls} placeholder="Ambulancia všeobecného lekára, …" />
-                  </div>
-                </div>
-                <p className="text-xs text-slate-400">Originál žiadanky si prineste so sebou na vyšetrenie.</p>
-              </div>
-            )}
-          </div>
+          )}
+        </div>
+      )}
 
-          <div className={sectionCls}>
-            <h3 className="text-lg font-bold text-blue-300">Termín</h3>
-            {availableDays.length === 0 ? (
-              <p className="text-slate-400 bg-slate-800/60 p-4 rounded-lg">
-                Momentálne nie sú otvorené žiadne termíny na objednávanie. Skúste to prosím neskôr.
-              </p>
-            ) : (
-              <>
-                <label className={labelCls}>Vyberte deň *</label>
-                <div className="flex gap-2 overflow-x-auto pb-2">
-                  {availableDays.map((iso) => (
-                    <button
-                      key={iso}
-                      type="button"
-                      title={iso}
-                      onClick={() => { setField("date", iso); setField("time", ""); }}
-                      className={`shrink-0 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                        form.date === iso ? "bg-blue-600 text-white ring-2 ring-blue-300" : "bg-slate-600 hover:bg-slate-500 text-white"
-                      }`}
-                    >
-                      {formatDateShort(iso)}
-                      <span className="block text-xs font-normal opacity-75">{freeSlotsFor(iso).length} voľných</span>
-                    </button>
-                  ))}
-                </div>
-                {form.date && (
-                  <div>
-                    <label className={labelCls}>Voľné časy — {formatDateHuman(form.date)}</label>
-                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mt-2">
+      {/* KROK 2 — TERMÍN */}
+      {step === 2 && (
+        <div>
+          <h3 className="text-lg font-bold text-slate-800 mb-1">Vyberte termín</h3>
+          <p className="text-sm text-slate-500 mb-4">
+            {examType?.label} · <span className="font-semibold text-blue-700">{examType && formatPrice(priceFor(examType))}</span>
+          </p>
+          {firstAvailableIso === null ? (
+            <p className="text-slate-500 bg-slate-50 border border-slate-200 p-4 rounded-xl">
+              Momentálne nie sú otvorené žiadne termíny na objednávanie. Skúste to prosím neskôr.
+            </p>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              <MonthCalendar
+                monthDate={monthDate}
+                onMonthChange={shiftMonth}
+                isAvailable={isDayAvailable}
+                selected={form.date}
+                onSelect={(iso) => { setField("date", iso); setField("time", ""); }}
+              />
+              <div>
+                {form.date ? (
+                  <>
+                    <p className="font-semibold text-slate-700 mb-2 capitalize">{formatDateHuman(form.date)}</p>
+                    <div className="grid grid-cols-3 gap-2">
                       {freeSlotsFor(form.date).map((slot) => (
                         <button
                           key={slot}
                           type="button"
                           onClick={() => setField("time", slot)}
-                          className={`p-2 rounded-lg text-sm font-semibold transition-colors ${
-                            form.time === slot ? "bg-green-600 text-white ring-2 ring-green-300" : "bg-slate-600 hover:bg-slate-500 text-white"
+                          className={`py-2 px-3 rounded-lg text-sm font-bold border-2 transition-colors ${
+                            form.time === slot
+                              ? "border-blue-600 bg-blue-600 text-white"
+                              : "border-blue-200 text-blue-700 hover:border-blue-500"
                           }`}
                         >
                           {slot}
                         </button>
                       ))}
                     </div>
-                  </div>
+                  </>
+                ) : (
+                  <p className="text-slate-400 text-sm mt-8 text-center">← Vyberte deň v kalendári.<br />Modré dni majú voľné termíny.</p>
                 )}
-              </>
-            )}
-          </div>
-
-          <div className={sectionCls}>
-            <h3 className="text-lg font-bold text-blue-300">Vaše údaje</h3>
-            <div className="grid md:grid-cols-2 gap-3">
-              <div>
-                <label className={labelCls}>Meno a priezvisko *</label>
-                <input required value={form.patientName} onChange={(e) => setField("patientName", e.target.value)} className={inputCls} placeholder="Ján Novák" />
-              </div>
-              <div>
-                <label className={labelCls}>Rodné číslo *</label>
-                <input required value={form.birthNumber} onChange={(e) => setField("birthNumber", e.target.value)} className={inputCls} placeholder="800101/1234" />
-              </div>
-              <div>
-                <label className={labelCls}>Zdravotná poisťovňa</label>
-                <select value={form.insurance} onChange={(e) => setField("insurance", e.target.value)} className={inputCls}>
-                  {insuranceOptions.map((o) => (<option key={o.id} value={o.id}>{o.label}</option>))}
-                </select>
-              </div>
-              <div>
-                <label className={labelCls}>Telefón *</label>
-                <input required value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={inputCls} placeholder="+421 900 000 000" />
-              </div>
-              <div className="md:col-span-2">
-                <label className={labelCls}>E-mail (na potvrdenie termínu)</label>
-                <input type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} className={inputCls} placeholder="jan.novak@..." />
               </div>
             </div>
+          )}
+        </div>
+      )}
+
+      {/* KROK 3 — ÚDAJE */}
+      {step === 3 && (
+        <form id="patient-details-form" onSubmit={handleSubmit} className="space-y-4">
+          <h3 className="text-lg font-bold text-slate-800">Vaše údaje</h3>
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-slate-700">
+            <strong>{examType?.label}</strong> — {formatDateHuman(form.date)} o {form.time} ·{" "}
+            <span className="font-bold text-blue-700">{examType && formatPrice(priceFor(examType))}</span>
+            {isReferral && " (doplatok so žiadankou)"}
+          </div>
+          <div className="grid md:grid-cols-2 gap-3">
+            <div>
+              <label className={labelCls}>Meno a priezvisko *</label>
+              <input required value={form.patientName} onChange={(e) => setField("patientName", e.target.value)} className={inputCls} placeholder="Ján Novák" />
+            </div>
+            <div>
+              <label className={labelCls}>Rodné číslo *</label>
+              <input required value={form.birthNumber} onChange={(e) => setField("birthNumber", e.target.value)} className={inputCls} placeholder="800101/1234" />
+            </div>
+            <div>
+              <label className={labelCls}>Zdravotná poisťovňa</label>
+              <select value={form.insurance} onChange={(e) => setField("insurance", e.target.value)} className={inputCls}>
+                {insuranceOptions.map((o) => (<option key={o.id} value={o.id}>{o.label}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className={labelCls}>Telefón *</label>
+              <input required value={form.phone} onChange={(e) => setField("phone", e.target.value)} className={inputCls} placeholder="+421 900 000 000" />
+            </div>
+            <div className="md:col-span-2">
+              <label className={labelCls}>E-mail (na potvrdenie termínu)</label>
+              <input type="email" value={form.email} onChange={(e) => setField("email", e.target.value)} className={inputCls} placeholder="jan.novak@..." />
+            </div>
+            <div className="md:col-span-2">
+              <label className={labelCls}>Dôvod vyšetrenia / ťažkosti *</label>
+              <textarea required rows={3} value={form.reason} onChange={(e) => setField("reason", e.target.value)} className={inputCls} placeholder="Popíšte svoje ťažkosti alebo dôvod, pre ktorý žiadate vyšetrenie…" />
+            </div>
+          </div>
+          {isReferral && (
+            <div className="border border-emerald-300 bg-emerald-50 rounded-xl p-3 space-y-3">
+              <p className="text-emerald-700 font-semibold text-sm">Údaje zo žiadanky:</p>
+              <div className="grid md:grid-cols-2 gap-3">
+                <div>
+                  <label className={labelCls}>Odporúčajúci lekár *</label>
+                  <input required value={form.referrerName} onChange={(e) => setField("referrerName", e.target.value)} className={inputCls} placeholder="MUDr. …" />
+                </div>
+                <div>
+                  <label className={labelCls}>Ambulancia / pracovisko</label>
+                  <input value={form.referrerFacility} onChange={(e) => setField("referrerFacility", e.target.value)} className={inputCls} placeholder="Ambulancia všeobecného lekára, …" />
+                </div>
+              </div>
+              <p className="text-xs text-slate-500">Originál žiadanky si prineste so sebou na vyšetrenie.</p>
+            </div>
+          )}
+        </form>
+      )}
+
+      {/* KROK 4 — PLATBA */}
+      {step === 4 && createdOrder && (
+        <div className="space-y-4 text-center">
+          <div className="bg-emerald-50 border border-emerald-300 p-5 rounded-xl space-y-1">
+            <div className="w-12 h-12 mx-auto rounded-full bg-emerald-500 text-white flex items-center justify-center text-2xl font-bold">✓</div>
+            <h3 className="text-xl font-bold text-emerald-700">Rezervácia odoslaná</h3>
+            <p className="text-slate-700">
+              <strong>{createdOrder.exam.label}</strong><br />
+              {formatDateHuman(createdOrder.date)} o {createdOrder.time}
+            </p>
+            <p className="text-xs text-slate-500">Číslo objednávky: <strong>{createdOrder.id}</strong></p>
           </div>
 
-          {error && <div className="bg-red-700 text-white p-3 rounded-lg font-semibold">{error}</div>}
+          <div className="border border-slate-200 rounded-xl p-5 space-y-3">
+            <h3 className="text-lg font-bold text-slate-800">
+              {createdOrder.hasReferral ? "Platba doplatku (so žiadankou)" : "Platba za vyšetrenie (samoplatca)"}
+            </h3>
+            <p className="text-3xl font-bold text-blue-700">{formatPrice(createdOrder.price)}</p>
+            <p className="text-sm text-slate-500">Naskenujte QR kód v aplikácii vašej banky (PAY by square):</p>
+            <PaymentQr order={createdOrder} settings={settings} />
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-left text-sm space-y-1 max-w-md mx-auto text-slate-700">
+              <p><strong>IBAN:</strong> {settings.iban}</p>
+              <p><strong>Príjemca:</strong> {settings.beneficiary}</p>
+              <p><strong>Variabilný symbol:</strong> {createdOrder.variableSymbol}</p>
+              <p><strong>Suma:</strong> {formatPrice(createdOrder.price)}</p>
+            </div>
+            {createdOrder.hasReferral && (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-300 p-3 rounded-lg">
+                <strong>Nezabudnite si na vyšetrenie priniesť žiadanku (výmenný lístok)</strong> — bez nej platí plná samoplatcovská cena.
+              </p>
+            )}
+            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-300 p-3 rounded-lg">
+              Termín je rezervovaný a bude <strong>potvrdený po prijatí platby</strong>. Ak platba nepríde do 24 hodín, rezervácia môže byť zrušená.
+            </p>
+          </div>
 
-          <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg text-xl shadow-lg transition duration-200">
-            Odoslať žiadosť a prejsť na platbu
+          <button onClick={resetWizard} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl text-lg shadow transition duration-200">
+            Nová objednávka
           </button>
-        </>
+        </div>
       )}
-    </form>
+
+      {error && <div className="bg-red-50 border border-red-300 text-red-700 p-3 rounded-lg font-semibold mt-4">{error}</div>}
+
+      {/* NAVIGÁCIA */}
+      {step < 4 && (
+        <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-100">
+          {step > 1 ? (
+            <button type="button" onClick={goBack} className="text-slate-500 hover:text-slate-700 font-semibold px-4 py-3 transition-colors">
+              ‹ Späť
+            </button>
+          ) : <span />}
+          {step < 3 && (
+            <button type="button" onClick={goNext} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow transition duration-200">
+              Pokračovať ›
+            </button>
+          )}
+          {step === 3 && (
+            <button type="submit" form="patient-details-form" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow transition duration-200">
+              Odoslať a prejsť na platbu ›
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   );
 };
 
@@ -802,7 +969,10 @@ export default function UsgBooking() {
       </div>
 
       {view === "patient"
-        ? <PatientView orders={orders} openSlots={openSlots} settings={settings} pricelist={pricelist} onSubmit={addOrder} />
+        ? <>
+            <UsgHero />
+            <PatientView orders={orders} openSlots={openSlots} settings={settings} pricelist={pricelist} onSubmit={addOrder} />
+          </>
         : <AdminView
             orders={orders}
             openSlots={openSlots}
