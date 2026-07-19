@@ -1,5 +1,6 @@
 import { useState, useMemo, useReducer, useEffect } from "react";
 import CtBooking from "./CtBooking.jsx";
+import UsgBooking from "./UsgBooking.jsx";
 
 // --- 1. HELPER DATA ---
 const nihssItemsDefinition = [
@@ -763,9 +764,15 @@ function App() {
           >
             📅 CT objednávky
           </button>
+          <button
+            onClick={() => setModule("usg")}
+            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${module === "usg" ? "bg-teal-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}
+          >
+            🩺 USG objednávky
+          </button>
         </div>
         <div className="bg-slate-800 p-6 md:p-10 rounded-xl shadow-2xl border-slate-700">
-          {module === "stroke" ? renderCurrentPage() : <CtBooking />}
+          {module === "stroke" ? renderCurrentPage() : module === "booking" ? <CtBooking /> : <UsgBooking />}
         </div>
       </div>
     </div>
