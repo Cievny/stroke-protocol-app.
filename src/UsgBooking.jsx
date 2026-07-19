@@ -160,8 +160,8 @@ const PaymentQr = ({ order, settings }) => {
 
 const UsgHero = () => (
   <div className="bg-white rounded-2xl shadow-xl p-5 md:p-8 mb-4 text-slate-800">
-    <p className="text-xs font-bold tracking-widest text-blue-600 uppercase mb-1">Národný ústav srdcových a cievnych chorôb, a.s.</p>
-    <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 mb-2">
+    <p className="text-xs font-bold tracking-widest text-[#e2001a] uppercase mb-1">Národný ústav srdcových a cievnych chorôb, a.s.</p>
+    <h2 className="text-2xl md:text-3xl font-extrabold text-[#003d7c] mb-2">
       Cievne USG vyšetrenie tam, kde cievam rozumejú najlepšie
     </h2>
     <p className="text-slate-600 mb-5">
@@ -169,21 +169,21 @@ const UsgHero = () => (
       s termínom, ktorý si vyberiete sami, a platbou vopred cez QR kód.
     </p>
     <div className="grid md:grid-cols-3 gap-3">
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+      <div className="bg-[#f5f8fb] border border-slate-200 rounded-xl p-4">
         <div className="text-2xl mb-1">🩺</div>
         <p className="font-bold text-slate-800 text-sm mb-1">Skúsení odborníci</p>
         <p className="text-xs text-slate-600">
           Vyšetrenie vykonávajú lekári s dlhoročnou praxou v cievnej diagnostike na moderných ultrazvukových prístrojoch.
         </p>
       </div>
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+      <div className="bg-[#f5f8fb] border border-slate-200 rounded-xl p-4">
         <div className="text-2xl mb-1">🏥</div>
         <p className="font-bold text-slate-800 text-sm mb-1">Tradícia a špecializácia</p>
         <p className="text-xs text-slate-600">
           NÚSCH je špičkové slovenské pracovisko pre srdce a cievy — diagnostike cievnych ochorení sa venujeme desaťročia.
         </p>
       </div>
-      <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+      <div className="bg-[#f5f8fb] border border-slate-200 rounded-xl p-4">
         <div className="text-2xl mb-1">🤝</div>
         <p className="font-bold text-slate-800 text-sm mb-1">Starostlivosť, ktorá nekončí nálezom</p>
         <p className="text-xs text-slate-600">
@@ -206,11 +206,11 @@ const StepIndicator = ({ current }) => (
         <div key={label} className="flex items-center flex-1 last:flex-none">
           <div className="flex flex-col items-center">
             <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
-              done ? "bg-emerald-500 text-white" : active ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-500"
+              done ? "bg-emerald-500 text-white" : active ? "bg-[#e2001a] text-white" : "bg-slate-200 text-slate-500"
             }`}>
               {done ? "✓" : stepNum}
             </div>
-            <span className={`text-[11px] mt-1 font-semibold whitespace-nowrap ${active ? "text-blue-700" : done ? "text-emerald-600" : "text-slate-400"}`}>
+            <span className={`text-[11px] mt-1 font-semibold whitespace-nowrap ${active ? "text-[#e2001a]" : done ? "text-emerald-600" : "text-slate-400"}`}>
               {label}
             </span>
           </div>
@@ -261,10 +261,10 @@ const MonthCalendar = ({ monthDate, onMonthChange, isAvailable, selected, onSele
               disabled={!available}
               onClick={() => onSelect(iso)}
               className={`aspect-square rounded-full text-sm font-semibold transition-colors ${
-                isSelected ? "bg-blue-600 text-white"
-                : available ? "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                isSelected ? "bg-[#005ca9] text-white"
+                : available ? "bg-[#eaf2fa] text-[#005ca9] hover:bg-[#d8e8f6]"
                 : "text-slate-300 cursor-default"
-              } ${isToday && !isSelected ? "ring-1 ring-blue-400" : ""}`}
+              } ${isToday && !isSelected ? "ring-1 ring-[#005ca9]" : ""}`}
             >
               {day}
             </button>
@@ -396,7 +396,7 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
 
   const resetWizard = () => { setCreatedOrder(null); setForm(emptyForm); setStep(1); setError(""); };
 
-  const inputCls = "w-full p-3 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none";
+  const inputCls = "w-full p-3 bg-white border border-slate-300 rounded-lg text-slate-800 focus:ring-2 focus:ring-[#005ca9] focus:border-[#005ca9] outline-none";
   const labelCls = "block text-sm font-semibold text-slate-600 mb-1";
 
   return (
@@ -407,7 +407,7 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
       {step === 1 && (
         <div className="space-y-5">
           <div>
-            <h3 className="text-lg font-bold text-slate-800 mb-1">Máte žiadanku od lekára?</h3>
+            <h3 className="text-lg font-bold text-[#003d7c] mb-1">Máte žiadanku od lekára?</h3>
             <p className="text-sm text-slate-500 mb-3">
               Ide o platené vyšetrenia v rámci doplnkových ordinačných hodín. So žiadankou (výmenným lístkom)
               platíte len doplatok, bez žiadanky plnú cenu podľa cenníka.
@@ -417,7 +417,7 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
                 type="button"
                 onClick={() => chooseReferral("yes")}
                 className={`flex-1 p-4 rounded-xl border-2 text-left transition-colors ${
-                  form.hasReferral === "yes" ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-blue-300"
+                  form.hasReferral === "yes" ? "border-[#005ca9] bg-[#eaf2fa]" : "border-slate-200 hover:border-[#8fb8dd]"
                 }`}
               >
                 <span className="font-bold text-slate-800">Áno, mám žiadanku</span>
@@ -427,7 +427,7 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
                 type="button"
                 onClick={() => chooseReferral("no")}
                 className={`flex-1 p-4 rounded-xl border-2 text-left transition-colors ${
-                  form.hasReferral === "no" ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-blue-300"
+                  form.hasReferral === "no" ? "border-[#005ca9] bg-[#eaf2fa]" : "border-slate-200 hover:border-[#8fb8dd]"
                 }`}
               >
                 <span className="font-bold text-slate-800">Nie, nemám žiadanku</span>
@@ -438,7 +438,7 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
 
           {form.hasReferral && (
             <div>
-              <h3 className="text-lg font-bold text-slate-800 mb-3">Vyberte vyšetrenie</h3>
+              <h3 className="text-lg font-bold text-[#003d7c] mb-3">Vyberte vyšetrenie</h3>
               <div className="space-y-2 max-h-96 overflow-y-auto pr-1">
                 {examChoices.map((t) => (
                   <button
@@ -446,14 +446,14 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
                     type="button"
                     onClick={() => setField("examTypeId", t.id)}
                     className={`w-full flex items-center justify-between gap-3 p-4 rounded-xl border-2 text-left transition-colors ${
-                      form.examTypeId === t.id ? "border-blue-600 bg-blue-50" : "border-slate-200 hover:border-blue-300"
+                      form.examTypeId === t.id ? "border-[#005ca9] bg-[#eaf2fa]" : "border-slate-200 hover:border-[#8fb8dd]"
                     }`}
                   >
                     <span>
                       <span className="font-semibold text-slate-800 text-sm">{t.label}</span>
                       <span className="block text-xs text-slate-400 mt-0.5">⏱ {EXAM_DURATION_LABEL}</span>
                     </span>
-                    <span className="text-blue-700 font-bold whitespace-nowrap">{formatPrice(priceFor(t))}</span>
+                    <span className="text-[#005ca9] font-bold whitespace-nowrap">{formatPrice(priceFor(t))}</span>
                   </button>
                 ))}
               </div>
@@ -470,9 +470,9 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
       {/* KROK 2 — TERMÍN */}
       {step === 2 && (
         <div>
-          <h3 className="text-lg font-bold text-slate-800 mb-1">Vyberte termín</h3>
+          <h3 className="text-lg font-bold text-[#003d7c] mb-1">Vyberte termín</h3>
           <p className="text-sm text-slate-500 mb-4">
-            {examType?.label} · <span className="font-semibold text-blue-700">{examType && formatPrice(priceFor(examType))}</span>
+            {examType?.label} · <span className="font-semibold text-[#005ca9]">{examType && formatPrice(priceFor(examType))}</span>
           </p>
           {firstAvailableIso === null ? (
             <p className="text-slate-500 bg-slate-50 border border-slate-200 p-4 rounded-xl">
@@ -499,8 +499,8 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
                           onClick={() => setField("time", slot)}
                           className={`py-2 px-3 rounded-lg text-sm font-bold border-2 transition-colors ${
                             form.time === slot
-                              ? "border-blue-600 bg-blue-600 text-white"
-                              : "border-blue-200 text-blue-700 hover:border-blue-500"
+                              ? "border-[#005ca9] bg-[#005ca9] text-white"
+                              : "border-[#b3d1ec] text-[#005ca9] hover:border-[#005ca9]"
                           }`}
                         >
                           {slot}
@@ -520,10 +520,10 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
       {/* KROK 3 — ÚDAJE */}
       {step === 3 && (
         <form id="patient-details-form" onSubmit={handleSubmit} className="space-y-4">
-          <h3 className="text-lg font-bold text-slate-800">Vaše údaje</h3>
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm text-slate-700">
+          <h3 className="text-lg font-bold text-[#003d7c]">Vaše údaje</h3>
+          <div className="bg-[#eaf2fa] border border-[#b3d1ec] rounded-xl p-3 text-sm text-slate-700">
             <strong>{examType?.label}</strong> — {formatDateHuman(form.date)} o {form.time} ·{" "}
-            <span className="font-bold text-blue-700">{examType && formatPrice(priceFor(examType))}</span>
+            <span className="font-bold text-[#005ca9]">{examType && formatPrice(priceFor(examType))}</span>
             {isReferral && " (doplatok so žiadankou)"}
           </div>
           <div className="grid md:grid-cols-2 gap-3">
@@ -587,10 +587,10 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
           </div>
 
           <div className="border border-slate-200 rounded-xl p-5 space-y-3">
-            <h3 className="text-lg font-bold text-slate-800">
+            <h3 className="text-lg font-bold text-[#003d7c]">
               {createdOrder.hasReferral ? "Platba doplatku (so žiadankou)" : "Platba za vyšetrenie (samoplatca)"}
             </h3>
-            <p className="text-3xl font-bold text-blue-700">{formatPrice(createdOrder.price)}</p>
+            <p className="text-3xl font-bold text-[#005ca9]">{formatPrice(createdOrder.price)}</p>
             <p className="text-sm text-slate-500">Naskenujte QR kód v aplikácii vašej banky (PAY by square):</p>
             <PaymentQr order={createdOrder} settings={settings} />
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-left text-sm space-y-1 max-w-md mx-auto text-slate-700">
@@ -609,7 +609,7 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
             </p>
           </div>
 
-          <button onClick={resetWizard} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl text-lg shadow transition duration-200">
+          <button onClick={resetWizard} className="w-full bg-[#e2001a] hover:bg-[#c00017] text-white font-bold py-3 px-6 rounded-xl text-lg shadow transition duration-200">
             Nová objednávka
           </button>
         </div>
@@ -626,12 +626,12 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
             </button>
           ) : <span />}
           {step < 3 && (
-            <button type="button" onClick={goNext} className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow transition duration-200">
+            <button type="button" onClick={goNext} className="bg-[#e2001a] hover:bg-[#c00017] text-white font-bold py-3 px-8 rounded-xl shadow transition duration-200">
               Pokračovať ›
             </button>
           )}
           {step === 3 && (
-            <button type="submit" form="patient-details-form" className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl shadow transition duration-200">
+            <button type="submit" form="patient-details-form" className="bg-[#e2001a] hover:bg-[#c00017] text-white font-bold py-3 px-8 rounded-xl shadow transition duration-200">
               Odoslať a prejsť na platbu ›
             </button>
           )}
@@ -946,8 +946,8 @@ export default function UsgBooking() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-center text-blue-300 mb-2">Objednávanie na USG</h1>
-      <p className="text-center text-slate-400 text-sm mb-6">
+      <h1 className="text-3xl font-bold text-center text-[#003d7c] mb-2">Objednávanie na USG</h1>
+      <p className="text-center text-slate-500 text-sm mb-6">
         Platené vyšetrenia v rámci doplnkových ordinačných hodín — so žiadankou doplatok, bez žiadanky plná cena.
         Platba QR kódom (PAY by square). Prototyp — dáta sú uložené len v tomto prehliadači.
       </p>
@@ -955,13 +955,13 @@ export default function UsgBooking() {
       <div className="flex gap-2 mb-6">
         <button
           onClick={() => setView("patient")}
-          className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${view === "patient" ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}
+          className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${view === "patient" ? "bg-[#e2001a] text-white" : "bg-white text-[#003d7c] border border-slate-200 hover:border-[#e2001a]"}`}
         >
           Objednať sa
         </button>
         <button
           onClick={() => setView("admin")}
-          className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${view === "admin" ? "bg-blue-600 text-white" : "bg-slate-700 text-slate-300 hover:bg-slate-600"}`}
+          className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${view === "admin" ? "bg-[#e2001a] text-white" : "bg-white text-[#003d7c] border border-slate-200 hover:border-[#e2001a]"}`}
         >
           Sonografia — správa
           {pendingCount > 0 && <span className="ml-2 bg-yellow-500 text-slate-900 text-xs font-bold px-2 py-1 rounded-full">{pendingCount}</span>}
@@ -973,18 +973,20 @@ export default function UsgBooking() {
             <UsgHero />
             <PatientView orders={orders} openSlots={openSlots} settings={settings} pricelist={pricelist} onSubmit={addOrder} />
           </>
-        : <AdminView
-            orders={orders}
-            openSlots={openSlots}
-            settings={settings}
-            pricelist={pricelist}
-            onToggleSlot={toggleSlot}
-            onOpenDay={openDay}
-            onCloseDay={closeDay}
-            onSetStatus={setStatus}
-            onSaveSettings={setSettings}
-            onSavePricelist={setPricelist}
-          />}
+        : <div className="bg-slate-800 text-white rounded-2xl p-5 md:p-6 shadow-xl">
+            <AdminView
+              orders={orders}
+              openSlots={openSlots}
+              settings={settings}
+              pricelist={pricelist}
+              onToggleSlot={toggleSlot}
+              onOpenDay={openDay}
+              onCloseDay={closeDay}
+              onSetStatus={setStatus}
+              onSaveSettings={setSettings}
+              onSavePricelist={setPricelist}
+            />
+          </div>}
     </div>
   );
 }

@@ -748,33 +748,52 @@ function App() {
     }
   };
 
+  const navItems = [
+    { id: "stroke", label: "Stroke protokol" },
+    { id: "booking", label: "CT objednávky" },
+    { id: "usg", label: "USG objednávky" },
+  ];
+
   return (
-    <div className="bg-slate-900 text-white min-h-screen p-4 md:p-8 font-sans">
-      <div className="max-w-3xl w-full mx-auto">
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setModule("stroke")}
-            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${module === "stroke" ? "bg-red-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}
-          >
-            🧠 Stroke protokol
-          </button>
-          <button
-            onClick={() => setModule("booking")}
-            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${module === "booking" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}
-          >
-            📅 CT objednávky
-          </button>
-          <button
-            onClick={() => setModule("usg")}
-            className={`flex-1 py-3 px-4 rounded-lg font-bold transition-colors ${module === "usg" ? "bg-teal-600 text-white" : "bg-slate-800 text-slate-400 hover:bg-slate-700"}`}
-          >
-            🩺 USG objednávky
-          </button>
+    <div className="bg-[#f2f4f7] text-slate-900 min-h-screen font-sans">
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-5xl mx-auto px-4 py-4 flex items-center gap-3">
+          <svg viewBox="0 0 24 24" className="w-9 h-9 shrink-0" aria-hidden="true">
+            <path fill="#e2001a" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <div>
+            <p className="font-extrabold text-[#003d7c] leading-tight text-sm md:text-base">Národný ústav srdcových a cievnych chorôb, a.s.</p>
+            <p className="text-xs text-slate-500">Klientske centrum — objednávanie vyšetrení</p>
+          </div>
         </div>
-        <div className="bg-slate-800 p-6 md:p-10 rounded-xl shadow-2xl border-slate-700">
-          {module === "stroke" ? renderCurrentPage() : module === "booking" ? <CtBooking /> : <UsgBooking />}
+      </header>
+      <nav className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-20">
+        <div className="max-w-5xl mx-auto px-4 flex gap-6 overflow-x-auto">
+          {navItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setModule(item.id)}
+              className={`py-3 text-sm font-bold whitespace-nowrap border-b-[3px] transition-colors ${
+                module === item.id ? "text-[#e2001a] border-[#e2001a]" : "text-[#003d7c] border-transparent hover:text-[#e2001a]"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
-      </div>
+      </nav>
+      <main className="max-w-3xl mx-auto p-4 md:p-6">
+        {module === "usg" ? (
+          <UsgBooking />
+        ) : (
+          <div className="bg-slate-800 text-white p-6 md:p-10 rounded-xl shadow-2xl">
+            {module === "stroke" ? renderCurrentPage() : <CtBooking />}
+          </div>
+        )}
+      </main>
+      <footer className="max-w-5xl mx-auto px-4 py-6 text-center text-xs text-slate-400">
+        NÚSCH, a.s. · Pod Krásnou hôrkou 1, Bratislava · Prototyp objednávkového systému
+      </footer>
     </div>
   );
 }
