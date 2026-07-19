@@ -598,6 +598,9 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
               <p><strong>Príjemca:</strong> {settings.beneficiary}</p>
               <p><strong>Variabilný symbol:</strong> {createdOrder.variableSymbol}</p>
               <p><strong>Suma:</strong> {formatPrice(createdOrder.price)}</p>
+              {settings.iban === defaultSettings.iban && (
+                <p className="text-red-600 font-bold">⚠ DEMO IBAN — toto NIE JE účet NÚSCH. Skutočný IBAN musí pracovisko nastaviť v správe pred spustením.</p>
+              )}
             </div>
             {createdOrder.hasReferral && (
               <p className="text-sm text-amber-700 bg-amber-50 border border-amber-300 p-3 rounded-lg">
