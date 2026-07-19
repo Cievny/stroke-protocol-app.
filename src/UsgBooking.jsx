@@ -7,18 +7,36 @@ import QRCode from "qrcode";
 const USG_ORDERS_KEY = "usgOrders_v1";
 const USG_OPEN_SLOTS_KEY = "usgOpenSlots_v1";
 const USG_SETTINGS_KEY = "usgSettings_v1";
-const USG_PRICELIST_KEY = "usgPricelist_v1";
+const USG_PRICELIST_KEY = "usgPricelist_v2";
 
-// Predvolený cenník samoplatcovských vyšetrení — upraviteľný v správe
+// Cenník platených USG vyšetrení v rámci doplnkových ordinačných hodín (NÚSCH, a.s., platnosť od 01.03.2026)
+// priceSelf = samoplatca cena s DPH, priceReferral = doplatok + žiadanka cena s DPH (null = so žiadankou nedostupné)
 const defaultPricelist = [
-  { id: "abdomen", label: "USG brucha", price: 40 },
-  { id: "thyroid", label: "USG štítnej žľazy a krku", price: 35 },
-  { id: "carotid", label: "USG krčných tepien (doppler)", price: 45 },
-  { id: "veins", label: "USG žíl dolných končatín (doppler)", price: 45 },
-  { id: "kidneys", label: "USG obličiek a močového mechúra", price: 35 },
-  { id: "soft", label: "USG mäkkých častí / podkožia", price: 30 },
-  { id: "breast", label: "USG prsníkov", price: 40 },
+  { id: "abdomen", label: "USG brucha a brušnej dutiny", priceSelf: 45, priceReferral: 30 },
+  { id: "kidneys", label: "USG obličiek a močového mechúra", priceSelf: 40, priceReferral: 30 },
+  { id: "pelvis", label: "USG orgánov malej panvy", priceSelf: 40, priceReferral: 30 },
+  { id: "soft", label: "USG mäkkých tkanív", priceSelf: 40, priceReferral: 30 },
+  { id: "thyroid", label: "USG štítnej žľazy", priceSelf: 40, priceReferral: 30 },
+  { id: "neck", label: "USG orgánov krku (štítna žľaza, slinné žľazy, lymfatické uzliny)", priceSelf: 50, priceReferral: 30 },
+  { id: "carotid", label: "Dopplerova ultrasonografia extrakraniálnych mozgových tepien (karotíd a vertebrálnych artérií)", priceSelf: 50, priceReferral: 30 },
+  { id: "upper1", label: "Dopplerova ultrasonografia žíl alebo tepien horných končatín (jedna končatina)", priceSelf: 40, priceReferral: 30 },
+  { id: "upper2", label: "Dopplerova ultrasonografia žíl alebo tepien horných končatín (obe končatiny)", priceSelf: 50, priceReferral: 30 },
+  { id: "lower1", label: "Dopplerova ultrasonografia žíl alebo tepien dolných končatín (jedna končatina)", priceSelf: 40, priceReferral: 30 },
+  { id: "lower2", label: "Dopplerova ultrasonografia žíl alebo tepien dolných končatín (obe končatiny)", priceSelf: 50, priceReferral: 30 },
+  { id: "renal", label: "USG brucha s vyšetrením renálnych artérií", priceSelf: 60, priceReferral: 30 },
+  { id: "aorta", label: "USG brucha s vyšetrením brušnej aorty", priceSelf: 50, priceReferral: 30 },
+  { id: "tos", label: "Dopplerova ultrasonografia na vylúčenie TOS (žilový alebo tepnový typ)", priceSelf: 100, priceReferral: 30 },
+  { id: "complete_vessels", label: "Kompletné sonografické vyšetrenie ciev (tepny a žily krku, dolných končatín a brušnej aorty)", priceSelf: 100, priceReferral: null },
+  { id: "compressions", label: "Kompletné sonografické vyšetrenie abdominálnych cievnych kompresií + konzultácia", priceSelf: 350, priceReferral: null },
+  { id: "consultation", label: "USG vyšetrenie a komplexná rádiologická konzultácia prinesených materiálov", priceSelf: 90, priceReferral: null },
 ];
+
+function normalizePricelist(list) {
+  if (Array.isArray(list) && list.length > 0 && list.every((i) => i && typeof i.priceSelf === "number")) {
+    return list;
+  }
+  return defaultPricelist;
+}
 
 const insuranceOptions = [
   { id: "25", label: "25 - VšZP" },
@@ -28,21 +46,16 @@ const insuranceOptions = [
 ];
 
 const usgStatuses = {
-  new: { label: "Nová", badge: "bg-yellow-600", border: "border-yellow-500" },
-  confirmed: { label: "Potvrdená", badge: "bg-green-600", border: "border-green-500" },
+  new: { label: "Čaká na platbu", badge: "bg-yellow-600", border: "border-yellow-500" },
+  confirmed: { label: "Zaplatená / potvrdená", badge: "bg-green-600", border: "border-green-500" },
   rejected: { label: "Zamietnutá", badge: "bg-red-600", border: "border-red-500" },
   done: { label: "Vykonaná", badge: "bg-blue-600", border: "border-blue-500" },
   noshow: { label: "Neprišiel", badge: "bg-slate-500", border: "border-slate-400" },
 };
 
-function statusLabel(order) {
-  if (order.status === "new") return order.hasReferral ? "Nová — so žiadankou" : "Čaká na platbu";
-  return usgStatuses[order.status].label;
-}
-
 const defaultSettings = {
   iban: "SK3112000000198742637541", // DEMO IBAN — nastavte vlastný v správe!
-  beneficiary: "Rádiologické oddelenie",
+  beneficiary: "NÚSCH, a.s.",
 };
 
 // Sloty po 20 minút, ktoré môže pracovisko otvoriť
@@ -151,7 +164,7 @@ const PaymentQr = ({ order, settings }) => {
 // --- 4. PACIENTSKY POHĽAD — ŽIADANKA + VÝBER TERMÍNU ---
 
 const emptyForm = {
-  hasReferral: "", // "yes" = so žiadankou (hradí poisťovňa), "no" = samoplatca
+  hasReferral: "", // "yes" = so žiadankou (doplatok), "no" = samoplatca (plná cena)
   examTypeId: "",
   reason: "",
   referrerName: "",
@@ -170,10 +183,16 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
   const [error, setError] = useState("");
   const [createdOrder, setCreatedOrder] = useState(null);
 
-  const isSelfPay = form.hasReferral === "no";
+  const isReferral = form.hasReferral === "yes";
   const hasChosen = form.hasReferral !== "";
-  const examType = pricelist.find((t) => t.id === form.examTypeId) || null;
+  // So žiadankou sa ponúkajú len vyšetrenia, ktoré majú doplatkovú cenu
+  const examChoices = isReferral ? pricelist.filter((t) => t.priceReferral != null) : pricelist;
+  const examType = examChoices.find((t) => t.id === form.examTypeId) || null;
+  const priceFor = (t) => (isReferral ? t.priceReferral : t.priceSelf);
+
   const setField = (field, value) => setForm((f) => ({ ...f, [field]: value }));
+  const chooseReferral = (value) =>
+    setForm((f) => ({ ...f, hasReferral: value, examTypeId: "" }));
 
   // Obsadené termíny naprieč objednávkami
   const takenByDate = useMemo(() => {
@@ -214,22 +233,21 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
       return setError("Vybraný termín už nie je dostupný. Vyberte iný.");
     }
 
-    const hasReferral = form.hasReferral === "yes";
     const order = {
       id: `USG-${Date.now().toString(36).toUpperCase()}`,
-      variableSymbol: hasReferral ? null : String(Date.now()).slice(-10),
+      variableSymbol: String(Date.now()).slice(-10),
       createdAt: new Date().toISOString(),
       status: "new",
       statusNote: "",
-      hasReferral,
+      hasReferral: isReferral,
       exam: {
         typeId: examType.id,
         label: examType.label,
         reason: form.reason.trim(),
-        referrerName: hasReferral ? form.referrerName.trim() : "",
-        referrerFacility: hasReferral ? form.referrerFacility.trim() : "",
+        referrerName: isReferral ? form.referrerName.trim() : "",
+        referrerFacility: isReferral ? form.referrerFacility.trim() : "",
       },
-      price: hasReferral ? null : examType.price,
+      price: priceFor(examType),
       patient: {
         name: form.patientName.trim(),
         birthNumber: form.birthNumber.trim(),
@@ -256,34 +274,28 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
           <p className="text-sm text-slate-300">Číslo objednávky: <strong className="text-yellow-300">{createdOrder.id}</strong></p>
         </div>
 
-        {createdOrder.hasReferral ? (
-          <div className="bg-slate-700 p-5 rounded-lg space-y-3">
-            <h3 className="text-xl font-bold text-blue-300">Vyšetrenie na žiadanku</h3>
-            <p className="text-sm text-slate-300">
-              Vyšetrenie je hradené zdravotnou poisťovňou na základe žiadanky od lekára.
-            </p>
-            <p className="text-sm text-yellow-200 bg-yellow-900/40 p-3 rounded-lg">
-              <strong>Nezabudnite si na vyšetrenie priniesť žiadanku (výmenný lístok)</strong> od odporúčajúceho lekára.
-              Bez nej nebude možné vyšetrenie vykonať. Termín potvrdí pracovisko na uvedený kontakt.
-            </p>
+        <div className="bg-slate-700 p-5 rounded-lg space-y-3">
+          <h3 className="text-xl font-bold text-blue-300">
+            {createdOrder.hasReferral ? "Platba doplatku (so žiadankou)" : "Platba za vyšetrenie (samoplatca)"}
+          </h3>
+          <p className="text-3xl font-bold text-yellow-300">{formatPrice(createdOrder.price)}</p>
+          <p className="text-sm text-slate-300">Naskenujte QR kód v mobilnej aplikácii vašej banky (PAY by square):</p>
+          <PaymentQr order={createdOrder} settings={settings} />
+          <div className="bg-slate-800/60 rounded-lg p-3 text-left text-sm space-y-1 max-w-md mx-auto">
+            <p><strong>IBAN:</strong> {settings.iban}</p>
+            <p><strong>Príjemca:</strong> {settings.beneficiary}</p>
+            <p><strong>Variabilný symbol:</strong> {createdOrder.variableSymbol}</p>
+            <p><strong>Suma:</strong> {formatPrice(createdOrder.price)}</p>
           </div>
-        ) : (
-          <div className="bg-slate-700 p-5 rounded-lg space-y-3">
-            <h3 className="text-xl font-bold text-blue-300">Platba za vyšetrenie</h3>
-            <p className="text-3xl font-bold text-yellow-300">{formatPrice(createdOrder.price)}</p>
-            <p className="text-sm text-slate-300">Naskenujte QR kód v mobilnej aplikácii vašej banky (PAY by square):</p>
-            <PaymentQr order={createdOrder} settings={settings} />
-            <div className="bg-slate-800/60 rounded-lg p-3 text-left text-sm space-y-1 max-w-md mx-auto">
-              <p><strong>IBAN:</strong> {settings.iban}</p>
-              <p><strong>Príjemca:</strong> {settings.beneficiary}</p>
-              <p><strong>Variabilný symbol:</strong> {createdOrder.variableSymbol}</p>
-              <p><strong>Suma:</strong> {formatPrice(createdOrder.price)}</p>
-            </div>
+          {createdOrder.hasReferral && (
             <p className="text-sm text-yellow-200 bg-yellow-900/40 p-3 rounded-lg">
-              Termín je rezervovaný a bude <strong>potvrdený po prijatí platby</strong>. Ak platba nepríde do 24 hodín, rezervácia môže byť zrušená.
+              <strong>Nezabudnite si na vyšetrenie priniesť žiadanku (výmenný lístok)</strong> od odporúčajúceho lekára — bez nej platí plná samoplatcovská cena.
             </p>
-          </div>
-        )}
+          )}
+          <p className="text-sm text-yellow-200 bg-yellow-900/40 p-3 rounded-lg">
+            Termín je rezervovaný a bude <strong>potvrdený po prijatí platby</strong>. Ak platba nepríde do 24 hodín, rezervácia môže byť zrušená.
+          </p>
+        </div>
 
         <button onClick={() => setCreatedOrder(null)} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg shadow-lg transition duration-200">
           Nová objednávka
@@ -301,29 +313,29 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
       <div className={sectionCls}>
         <h3 className="text-lg font-bold text-blue-300">Máte žiadanku od lekára?</h3>
         <p className="text-sm text-slate-300">
-          Ak vám vyšetrenie odporučil lekár a máte žiadanku (výmenný lístok), vyšetrenie hradí zdravotná poisťovňa.
-          Bez žiadanky je vyšetrenie spoplatnené podľa cenníka.
+          Ide o platené vyšetrenia v rámci doplnkových ordinačných hodín. So žiadankou (výmenným lístkom) platíte
+          len doplatok podľa cenníka, bez žiadanky plnú samoplatcovskú cenu.
         </p>
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             type="button"
-            onClick={() => setField("hasReferral", "yes")}
+            onClick={() => chooseReferral("yes")}
             className={`flex-1 p-4 rounded-lg font-bold transition-colors ${
               form.hasReferral === "yes" ? "bg-green-600 text-white ring-2 ring-green-300" : "bg-slate-600 hover:bg-slate-500 text-white"
             }`}
           >
             Áno, mám žiadanku
-            <span className="block text-xs font-normal opacity-80">hradí zdravotná poisťovňa</span>
+            <span className="block text-xs font-normal opacity-80">platí sa doplatok podľa cenníka</span>
           </button>
           <button
             type="button"
-            onClick={() => setField("hasReferral", "no")}
+            onClick={() => chooseReferral("no")}
             className={`flex-1 p-4 rounded-lg font-bold transition-colors ${
               form.hasReferral === "no" ? "bg-blue-600 text-white ring-2 ring-blue-300" : "bg-slate-600 hover:bg-slate-500 text-white"
             }`}
           >
             Nie, nemám žiadanku
-            <span className="block text-xs font-normal opacity-80">samoplatca — platba podľa cenníka</span>
+            <span className="block text-xs font-normal opacity-80">samoplatca — plná cena podľa cenníka</span>
           </button>
         </div>
       </div>
@@ -336,24 +348,28 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
               <label className={labelCls}>Typ vyšetrenia *</label>
               <select required value={form.examTypeId} onChange={(e) => setField("examTypeId", e.target.value)} className={inputCls}>
                 <option value="" disabled>— vyberte vyšetrenie —</option>
-                {pricelist.map((t) => (
+                {examChoices.map((t) => (
                   <option key={t.id} value={t.id}>
-                    {isSelfPay ? `${t.label} — ${formatPrice(t.price)}` : t.label}
+                    {t.label} — {formatPrice(priceFor(t))}
                   </option>
                 ))}
               </select>
-              {isSelfPay && examType && (
-                <p className="text-yellow-300 font-bold text-lg mt-2">Cena: {formatPrice(examType.price)}</p>
+              {examType && (
+                <p className="text-yellow-300 font-bold text-lg mt-2">
+                  {isReferral ? `Doplatok so žiadankou: ${formatPrice(examType.priceReferral)}` : `Cena: ${formatPrice(examType.priceSelf)}`}
+                </p>
               )}
-              {!isSelfPay && (
-                <p className="text-green-300 text-sm mt-2">Vyšetrenie hradené poisťovňou na základe žiadanky.</p>
+              {isReferral && (
+                <p className="text-xs text-slate-400 mt-1">
+                  Niektoré vyšetrenia sú dostupné len ako samoplatcovské — v tomto zozname sa nezobrazujú.
+                </p>
               )}
             </div>
             <div>
               <label className={labelCls}>Dôvod vyšetrenia / ťažkosti *</label>
               <textarea required rows={3} value={form.reason} onChange={(e) => setField("reason", e.target.value)} className={inputCls} placeholder="Popíšte svoje ťažkosti alebo dôvod, pre ktorý žiadate vyšetrenie…" />
             </div>
-            {!isSelfPay && (
+            {isReferral && (
               <div className="border-l-4 border-green-500 bg-slate-800/60 p-3 rounded space-y-3">
                 <p className="text-green-300 font-semibold text-sm">Údaje zo žiadanky:</p>
                 <div className="grid md:grid-cols-2 gap-3">
@@ -450,7 +466,7 @@ const PatientView = ({ orders, openSlots, settings, pricelist, onSubmit }) => {
           {error && <div className="bg-red-700 text-white p-3 rounded-lg font-semibold">{error}</div>}
 
           <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-6 rounded-lg text-xl shadow-lg transition duration-200">
-            {isSelfPay ? "Odoslať žiadosť a prejsť na platbu" : "Odoslať žiadosť o termín"}
+            Odoslať žiadosť a prejsť na platbu
           </button>
         </>
       )}
@@ -473,12 +489,16 @@ const UsgOrderCard = ({ order, onSetStatus }) => {
           <span className={`text-xs font-bold px-2 py-1 rounded ${order.hasReferral ? "bg-green-800 text-green-200" : "bg-blue-800 text-blue-200"}`}>
             {order.hasReferral ? "ŽIADANKA" : "SAMOPLATCA"}
           </span>
-          <span className={`${status.badge} text-xs font-bold px-2 py-1 rounded`}>{statusLabel(order)}</span>
+          <span className={`${status.badge} text-xs font-bold px-2 py-1 rounded`}>{status.label}</span>
         </div>
       </div>
       <p className="text-sm">
         <strong className="text-blue-300">{order.exam.label}</strong> — {formatDateHuman(order.date)} o {order.time}
-        {order.price != null && <span className="text-yellow-300 font-bold ml-2">{formatPrice(order.price)}</span>}
+        {order.price != null && (
+          <span className="text-yellow-300 font-bold ml-2">
+            {formatPrice(order.price)}{order.hasReferral ? " (doplatok)" : ""}
+          </span>
+        )}
       </p>
       <p className="text-sm text-slate-300 italic">{order.exam.reason}</p>
       {order.hasReferral && order.exam.referrerName && (
@@ -495,7 +515,7 @@ const UsgOrderCard = ({ order, onSetStatus }) => {
         {order.status === "new" && (
           <>
             <button onClick={() => onSetStatus(order.id, "confirmed")} className="bg-green-600 hover:bg-green-500 text-white text-sm font-semibold px-3 py-2 rounded transition-colors">
-              {order.hasReferral ? "Potvrdiť termín" : "Platba prijatá — potvrdiť"}
+              Platba prijatá — potvrdiť
             </button>
             <button
               onClick={() => {
@@ -520,7 +540,12 @@ const UsgOrderCard = ({ order, onSetStatus }) => {
 };
 
 const PricelistEditor = ({ pricelist, onSave }) => {
-  const [rows, setRows] = useState(pricelist.map((r) => ({ ...r, price: String(r.price) })));
+  const toDrafts = (list) => list.map((r) => ({
+    ...r,
+    priceSelf: String(r.priceSelf),
+    priceReferral: r.priceReferral == null ? "" : String(r.priceReferral),
+  }));
+  const [rows, setRows] = useState(() => toDrafts(pricelist));
   const [saved, setSaved] = useState(false);
 
   const updateRow = (index, field, value) => {
@@ -533,24 +558,40 @@ const PricelistEditor = ({ pricelist, onSave }) => {
   };
   const addRow = () => {
     setSaved(false);
-    setRows((prev) => [...prev, { id: `item-${Date.now()}`, label: "", price: "" }]);
+    setRows((prev) => [...prev, { id: `item-${Date.now()}`, label: "", priceSelf: "", priceReferral: "" }]);
+  };
+
+  const parsePrice = (value) => {
+    const num = parseFloat(String(value).replace(",", "."));
+    return isNaN(num) || num < 0 ? null : num;
   };
 
   const handleSave = () => {
     const cleaned = rows
-      .map((r) => ({ id: r.id, label: r.label.trim(), price: parseFloat(String(r.price).replace(",", ".")) }))
-      .filter((r) => r.label && !isNaN(r.price) && r.price >= 0);
+      .map((r) => ({
+        id: r.id,
+        label: r.label.trim(),
+        priceSelf: parsePrice(r.priceSelf),
+        priceReferral: r.priceReferral.trim() === "" ? null : parsePrice(r.priceReferral),
+      }))
+      .filter((r) => r.label && r.priceSelf != null);
     onSave(cleaned);
-    setRows(cleaned.map((r) => ({ ...r, price: String(r.price) })));
+    setRows(toDrafts(cleaned));
     setSaved(true);
   };
 
   return (
     <div className="bg-slate-700 p-4 rounded-lg space-y-3">
-      <h3 className="text-lg font-bold text-blue-300">Cenník vyšetrení (samoplatcovia)</h3>
+      <h3 className="text-lg font-bold text-blue-300">Cenník vyšetrení</h3>
       <p className="text-sm text-slate-400">
-        Položky sa ponúkajú pacientom pri objednávaní. Cena sa účtuje len samoplatcom bez žiadanky.
+        Prvá cena = samoplatca (bez žiadanky), druhá = doplatok so žiadankou. Ak doplatok necháte prázdny,
+        vyšetrenie sa so žiadankou nebude ponúkať (len samoplatca).
       </p>
+      <div className="hidden sm:flex gap-2 text-xs text-slate-400 font-semibold pr-12">
+        <span className="flex-1">Názov vyšetrenia</span>
+        <span className="w-24 text-right">Samoplatca</span>
+        <span className="w-24 text-right">Doplatok</span>
+      </div>
       <div className="space-y-2">
         {rows.map((row, i) => (
           <div key={row.id} className="flex gap-2 items-center">
@@ -561,13 +602,19 @@ const PricelistEditor = ({ pricelist, onSave }) => {
               placeholder="Názov vyšetrenia"
             />
             <input
-              value={row.price}
-              onChange={(e) => updateRow(i, "price", e.target.value)}
+              value={row.priceSelf}
+              onChange={(e) => updateRow(i, "priceSelf", e.target.value)}
               className="w-24 p-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm text-right"
-              placeholder="Cena"
+              placeholder="Cena €"
               inputMode="decimal"
             />
-            <span className="text-slate-400 text-sm">€</span>
+            <input
+              value={row.priceReferral}
+              onChange={(e) => updateRow(i, "priceReferral", e.target.value)}
+              className="w-24 p-2 bg-slate-800 border border-slate-600 rounded-lg text-white text-sm text-right"
+              placeholder="—"
+              inputMode="decimal"
+            />
             <button type="button" onClick={() => removeRow(i)} className="bg-red-700 hover:bg-red-600 text-white px-3 py-2 rounded text-sm transition-colors" title="Odstrániť položku">✕</button>
           </div>
         ))}
@@ -644,7 +691,7 @@ const AdminView = ({ orders, openSlots, settings, pricelist, onToggleSlot, onOpe
                 <div key={slot} className="p-2 rounded-lg text-sm bg-blue-900/70 border border-blue-500 text-center">
                   <span className="font-mono font-bold">{slot}</span>
                   <span className="block text-xs truncate">{booked.patient.name}</span>
-                  <span className="block text-xs opacity-75">{statusLabel(booked)}</span>
+                  <span className="block text-xs opacity-75">{usgStatuses[booked.status].label}</span>
                 </div>
               );
             }
@@ -700,7 +747,7 @@ export default function UsgBooking() {
   const [orders, setOrders] = useState(() => loadJson(USG_ORDERS_KEY, []));
   const [openSlots, setOpenSlots] = useState(() => loadJson(USG_OPEN_SLOTS_KEY, {}));
   const [settings, setSettings] = useState(() => loadJson(USG_SETTINGS_KEY, defaultSettings));
-  const [pricelist, setPricelist] = useState(() => loadJson(USG_PRICELIST_KEY, defaultPricelist));
+  const [pricelist, setPricelist] = useState(() => normalizePricelist(loadJson(USG_PRICELIST_KEY, defaultPricelist)));
 
   useEffect(() => { localStorage.setItem(USG_ORDERS_KEY, JSON.stringify(orders)); }, [orders]);
   useEffect(() => { localStorage.setItem(USG_OPEN_SLOTS_KEY, JSON.stringify(openSlots)); }, [openSlots]);
@@ -734,8 +781,8 @@ export default function UsgBooking() {
     <div>
       <h1 className="text-3xl font-bold text-center text-blue-300 mb-2">Objednávanie na USG</h1>
       <p className="text-center text-slate-400 text-sm mb-6">
-        So žiadankou hradí vyšetrenie poisťovňa, bez žiadanky platba podľa cenníka cez QR kód (PAY by square).
-        Prototyp — dáta sú uložené len v tomto prehliadači.
+        Platené vyšetrenia v rámci doplnkových ordinačných hodín — so žiadankou doplatok, bez žiadanky plná cena.
+        Platba QR kódom (PAY by square). Prototyp — dáta sú uložené len v tomto prehliadači.
       </p>
 
       <div className="flex gap-2 mb-6">
